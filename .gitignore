@@ -29,3 +29,23 @@ yarn-error.log*
 .vscode
 
 # .env
+
+# Terraform
+*.tfvars
+!terraform.tfvars.example
+.terraform/
+*.tfstate
+*.tfstate.*
+.terraform.lock.hcl
+crash.log
+
+# SSH Keys
+tf/ssh_key
+tf/ssh_key.pub
+*.pem
+*.key
+
+# Local development
+.env
+.idea/
+.vscode/

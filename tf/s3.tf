@@ -1,29 +1,32 @@
+locals {
+  timestamp = formatdate("YYYYMMDDHHmmss", timestamp())
+  bucket_name = "${var.s3_bucket_name}-${local.timestamp}"
+}
+
 resource "aws_s3_bucket" "code_bucket" {
-  bucket = "ai4devs-project-code-bucket"
+  bucket = local.bucket_name
+  tags   = var.tags
+
+  force_destroy = true
+}
+
+resource "aws_s3_bucket_ownership_controls" "bucket_ownership" {
+  bucket = aws_s3_bucket.code_bucket.id
+  rule {
+    object_ownership = "BucketOwnerPreferred"
+  }
+}
+
+resource "aws_s3_bucket_acl" "bucket_acl" {
+  depends_on = [
+    aws_s3_bucket.code_bucket,
+    aws_s3_bucket_ownership_controls.bucket_ownership
+  ]
+  bucket = aws_s3_bucket.code_bucket.id
   acl    = "private"
 }
 
-resource "null_resource" "generate_zip" {
-  provisioner "local-exec" {
-    command = "cd .. && sh ./generar-zip.sh"
-    working_dir = "${path.module}"
-  }
-
-  triggers = {
-    always_run = "${timestamp()}"
-  }
-}
-
-resource "aws_s3_bucket_object" "backend_zip" {
-  bucket = aws_s3_bucket.code_bucket.bucket
-  key    = "backend.zip"
-  source = "${path.module}/../backend.zip"
-  depends_on = [null_resource.generate_zip]
-}
-
-resource "aws_s3_bucket_object" "frontend_zip" {
-  bucket = aws_s3_bucket.code_bucket.bucket
-  key    = "frontend.zip"
-  source = "${path.module}/../frontend.zip"
-  depends_on = [null_resource.generate_zip]
+output "bucket_name" {
+  value = aws_s3_bucket.code_bucket.bucket
+  description = "The name of the S3 bucket created"
 }
